@@ -16,6 +16,7 @@ var UserSchema = new mongoose.Schema({
         Year: Number,
    },
    imgUrl: String,
+   connected: Boolean,
 });
 
 module.exports = mongoose.model('Users', UserSchema);

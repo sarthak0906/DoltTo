@@ -1,25 +1,31 @@
 const express    = require('express');
 const Mongoose   = require("mongoose");
 const BodyParser = require("body-parser");
-
-Mongoose.Promise = global.Promise;
-
-const port       = process.env.PORT || 3000;
-
+const http       = require('http');
 
 var app          = express();
+const httpServer = http.createServer(app);
+const io         = require('socket.io')(httpServer);
+
+Mongoose.Promise = global.Promise;
+const port       = process.env.PORT || 3000;
+
+var Users  = require('./Routes/Users');
 
 app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({ extended: true }));
+app.set('dirname', __dirname)
 
-Mongoose.connect('mongodb+srv://aman:bewda@cluster0-qcwvh.mongodb.net/test?retryWrites=true&w=majority')
-  .then(() =>  console.log('connection succesful'))
-  .catch((err) => console.error(err));
+const connect  = require("./dbconnect");
 
-var Users = require('./Routes/Users')
+app.get('/', (req, res) => {
+  res.sendFile(app.get('dirname') + '/Views/index.html')
+})
 
 app.use('/Users', Users);
 
-app.listen(port, () => {
-    console.log('listening on ' + port);
+require('./Routes/Socket.js')(app, io);
+
+httpServer.listen(port, () => {
+  console.log('listening on ' + port);
 })

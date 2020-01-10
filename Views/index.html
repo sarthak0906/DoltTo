@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Single User Websocket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font: 13px Helvetica, Arial; }
+        form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+        form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+        form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+    </style>
+
+</head>
+<body>
+    <h1>Single User Websocket Demo</h1>
+    <p>
+        <label for="status">Status: </label>
+        <input type="text" id="status"
+            name="status" value="Disconnected"
+            readonly="readonly" style="width: 300px;"
+        />
+    </p>
+    <p>
+        <label for="token">My Token: </label>
+        <input type="text" id="token" name="token" value="secret token" />
+    </p>
+    <p>
+        <button id="connect" onclick="connect()">
+        Connect
+        </button>
+        <button id="disconnect" onclick="disconnect()" disabled>
+        Disconnect
+        </button>
+    </p>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script>
+        const socketUrl = 'http://192.168.56.1:3000';
+
+        let connectButton;
+        let disconnectButton;
+        let socket;
+        let statusInput;
+        let tokenInput;
+
+        const connect = () => {
+            let error = null;
+
+            socket = io(socketUrl, {
+                autoConnect: false,
+            });
+
+            socket.on('connect', () => {
+                console.log('Connected');
+                statusInput.value = 'Connected';
+                connectButton.disabled = true;
+                disconnectButton.disabled = false;
+
+                socket.emit('authentication', {
+                    token: tokenInput.value,
+                });
+            });
+
+            socket.on('unauthorized', (reason) => {
+                console.log('Unauthorized:', reason);
+                
+                error = reason.message;
+
+                socket.disconnect();
+            });
+            
+            socket.on('chat message', (msg) => {
+                $('#messages').append($('<li>').text(msg.sender + " " + msg.msg));
+            });
+
+            socket.on('disconnect', (reason) => {
+                console.log(`Disconnected: ${error || reason}`);
+                statusInput.value = `Disconnected: ${error || reason}`;
+                connectButton.disabled = false;
+                disconnectButton.disabled = true;
+                error = null;
+            });
+
+            socket.open();
+        };
+
+        const disconnect = () => {
+            socket.disconnect();
+        }
+
+        $('form').submit(function(e){
+            e.preventDefault(); // prevents page reloading
+            let val = $('#m').val();
+            if (val){
+                socket.emit('chat message', val);
+            }
+            $('#m').val('');
+            return false;
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            connectButton = document.getElementById('connect');
+            disconnectButton = document.getElementById('disconnect');
+            statusInput = document.getElementById('status');
+            tokenInput = document.getElementById('token');
+        });
+    </script>
+</body>
+</html>
