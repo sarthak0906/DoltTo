@@ -3,6 +3,8 @@ const Chats      = require('../models/Chats');
 
 const socketAuth = require('socketio-auth');
 
+const fs         = require('fs');
+
 async function verifyUser (token) {
     return new Promise((resolve, reject) => {
         // setTimeout for database call
@@ -20,11 +22,7 @@ async function verifyUser (token) {
     });
 }
 
-module.exports = function(app, io) {
-    app.get('/abc', (req, res) => {
-        res.sendFile(app.get('dirname') + '/Views/index.html')
-    });
-
+module.exports = function(io) {
     socketAuth(io, {
         authenticate: async (socket, data, callback) => {
             const { token } = data;
@@ -40,8 +38,16 @@ module.exports = function(app, io) {
                 return callback({ message: 'UNAUTHORIZED' });
             }
         },
-        postAuthenticate: (socket) => {
-            console.log(`Socket ${socket.id} authenticated.`);
+        postAuthenticate: (socket, data) => {
+            socket.room = '/';
+            socket.join(socket.room);
+            console.log(`Socket ${data.username} authenticated.`);
+            // var a = JSON.stringify(data, null, 4);
+            // fs.writeFile('data.json', a, 'utf8', (err) => {
+            // if (err){
+            //     console.log(err);
+            //     }
+            // });
 
             Chats.find({}, (err, chat) => {
                 if (err){
@@ -49,8 +55,15 @@ module.exports = function(app, io) {
                 }
                 else{
                     chat.forEach(c => {
-                        io.emit('chat message', {msg: c.message, sender: c.sender});
-                        console.log(c.message);
+                        if (socket.room != '/'){
+                            if (c.room == socket.room){
+                                socket.emit('chat message', {val: c.message, sender: c.sender});
+                                // console.log(c.message);
+                            }
+                        }
+                        else {
+                            socket.emit('chat message', {val: c.message, sender: c.sender});
+                        }
                     })
                 }
             });
@@ -58,8 +71,9 @@ module.exports = function(app, io) {
             socket.on('chat message', (msg) => {
                 console.log(msg);
                 var chat = new Chats({
-                    message: msg,
-                    sender : socket.id
+                    message: msg.val,
+                    sender : data.username,
+                    room   : socket.room,
                 })
                 Chats.create(chat, (err, chat) => {
                     if (err){
@@ -69,10 +83,37 @@ module.exports = function(app, io) {
                         console.log("Message saved");
                     }
                 })
-                io.emit('chat message', {msg: msg, sender: socket.id});
+                socket.emit('chat message', {val: msg.val, sender: data.username});
+                console.log(socket.room);
+                // socket.leave(socket.room);
+                // socket.room = 'my-namespace';
+                // socket.join(socket.room);
             })
+            var room = "my-namespace";
+
+            socket.on('join', (join) => {
+                socket.leave(socket.room);
+                socket.join(join);
+                socket.room = join;
+                // room = room;
+                console.log("joined " , socket.room);
+                socket.emit('join', "joined");
+                Chats.find({}, (err, chat) => {
+                    if (err){
+                        console.log(err);
+                    }
+                    else{
+                        chat.forEach(c => {
+                            if (c.room == socket.room){
+                                socket.emit('chat message', {val: c.message, sender: c.sender});
+                                // console.log(c.message);
+                            }
+                        })
+                    }
+                });
+            });
         },
-        disconnect: (socket) => {
+        disconnect: (socket, data) => {
             console.log(`Socket ${socket.id} disconnected.`);
         },
     })

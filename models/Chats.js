@@ -7,6 +7,12 @@ const ChatSchema = mongoose.Schema({
     sender: {
         type: String
     },
+    reciever: {
+        type: String
+    },
+    room: {
+        type: String
+    },
     date: {
         type: Date,
         default: Date.now

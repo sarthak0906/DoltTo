@@ -5,7 +5,7 @@ const http       = require('http');
 
 var app          = express();
 const httpServer = http.createServer(app);
-const io         = require('socket.io')(httpServer);
+const io         = require('socket.io').listen(httpServer);
 
 Mongoose.Promise = global.Promise;
 const port       = process.env.PORT || 3000;
@@ -22,9 +22,13 @@ app.get('/', (req, res) => {
   res.sendFile(app.get('dirname') + '/Views/index.html')
 })
 
+app.get('/:name', (req, res) => {
+  res.sendFile(app.get('dirname') + '/Views/' + name + '.jpeg')
+})
+
 app.use('/Users', Users);
 
-require('./Routes/Socket.js')(app, io);
+require('./Routes/Socket.js')(io);
 
 httpServer.listen(port, () => {
   console.log('listening on ' + port);

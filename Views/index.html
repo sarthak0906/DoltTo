@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/aes.js"></script>
+    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/core-min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font: 13px Helvetica, Arial; }
@@ -28,8 +30,19 @@
         />
     </p>
     <p>
+        <label for="username">username </label>
+        <input type="text" id="username"
+            name="username" value="Default sender"
+            style="width: 300px;"
+        />
+    </p>
+    <p>
         <label for="token">My Token: </label>
         <input type="text" id="token" name="token" value="secret token" />
+    </p>
+    <p>
+        <label for="token">nameSpace </label>
+        <input type="text" id="nameSpace" name="nameSpace" value="" />
     </p>
     <p>
         <button id="connect" onclick="connect()">
@@ -38,21 +51,27 @@
         <button id="disconnect" onclick="disconnect()" disabled>
         Disconnect
         </button>
+        <button id="joinRoom" onclick="JoinRoom()" >
+        Join my-namespace nameSpace
+        </button>
     </p>
     <ul id="messages"></ul>
-    <br>
-    <br>
+    <br />
+    <br />
+    <br />
     <form action="">
       <input id="m" autocomplete="off" /><button>Send</button>
     </form>
     <script>
-        const socketUrl = 'https://dolt-to.herokuapp.com/';
+        // const socketUrl = 'https://dolt-to.herokuapp.com/';
+        const socketUrl = 'http://192.168.56.1:3000/';
 
         let connectButton;
         let disconnectButton;
         let socket;
         let statusInput;
         let tokenInput;
+        let joinRoom;
 
         const connect = () => {
             let error = null;
@@ -65,10 +84,12 @@
                 console.log('Connected');
                 statusInput.value = 'Connected';
                 connectButton.disabled = true;
+                joinButton.disabled = false;
                 disconnectButton.disabled = false;
 
                 socket.emit('authentication', {
                     token: tokenInput.value,
+                    username: Username.value,
                 });
             });
 
@@ -81,13 +102,14 @@
             });
             
             socket.on('chat message', (msg) => {
-                $('#messages').append($('<li>').text(msg.sender + " " + msg.msg));
+                $('#messages').append($('<li>').text(msg.sender + " " + msg.val));
             });
 
             socket.on('disconnect', (reason) => {
                 console.log(`Disconnected: ${error || reason}`);
                 statusInput.value = `Disconnected: ${error || reason}`;
                 connectButton.disabled = false;
+                joinButton.disabled = true;
                 disconnectButton.disabled = true;
                 error = null;
             });
@@ -99,11 +121,24 @@
             socket.disconnect();
         }
 
+        const JoinRoom = () => {
+            room = $('#nameSpace').val();
+            alert(room);
+            socket.emit('join', room);
+            socket.on('join', (msg) => {
+                alert(msg);
+            })
+        }
+
         $('form').submit(function(e){
             e.preventDefault(); // prevents page reloading
             let val = $('#m').val();
+            // val = encrypt(val);
             if (val){
-                socket.emit('chat message', val);
+                socket.emit('chat message', {
+                'val': val,
+                'sender': 'sender'
+            });
             }
             $('#m').val('');
             return false;
@@ -111,9 +146,12 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             connectButton = document.getElementById('connect');
+            joinButton = document.getElementById('joinRoom');
             disconnectButton = document.getElementById('disconnect');
             statusInput = document.getElementById('status');
             tokenInput = document.getElementById('token');
+            joiningRoom = document.getElementById('nameSpace');
+            Username = document.getElementById('username');
         });
     </script>
 </body>
