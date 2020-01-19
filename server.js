@@ -11,9 +11,10 @@ Mongoose.Promise = global.Promise;
 const port       = process.env.PORT || 3000;
 
 var Users  = require('./Routes/Users');
+var Posts  = require('./Routes/Posts');
 
-app.use(BodyParser.json());
-app.use(BodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded());
 app.set('dirname', __dirname)
 
 const connect  = require("./dbconnect");
@@ -22,11 +23,13 @@ app.get('/', (req, res) => {
   res.sendFile(app.get('dirname') + '/Views/index.html')
 })
 
-app.get('/:name', (req, res) => {
-  res.sendFile(app.get('dirname') + '/Views/' + name + '.jpeg')
+app.get('/Img/:name', (req, res) => {
+  res.sendFile(app.get('dirname') + '/Views/' + req.params.name + '.jpeg')
 })
 
 app.use('/Users', Users);
+
+app.use('/Posts', Posts);
 
 require('./Routes/Socket.js')(io);
 
