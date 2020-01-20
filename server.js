@@ -24,7 +24,23 @@ app.get('/', (req, res) => {
 })
 
 app.get('/Img/:name', (req, res) => {
-  res.sendFile(app.get('dirname') + '/Uploads/' + req.params.name + '.png')
+  try {
+    res.sendFile(app.get('dirname') + '/Uploads/' + req.params.name + '.png');
+  }
+  catch (error) {
+    try {
+      res.sendFile(app.get('dirname') + '/Uploads/' + req.params.name + '.jpg');
+    }
+    catch(error){
+      try {
+        res.sendFile(app.get('dirname') + '/Uploads/' + req.params.name + '.jpeg');
+      }
+      catch(err){
+        console.log(err);
+        res.send("error")
+      }
+    }
+  }
 })
 
 app.use('/Users', Users);
