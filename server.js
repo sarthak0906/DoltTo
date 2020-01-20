@@ -1,6 +1,6 @@
 const express    = require('express');
 const Mongoose   = require("mongoose");
-const BodyParser = require("body-parser");
+// const BodyParser = require("body-parser");
 const http       = require('http');
 
 var app          = express();
@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/Img/:name', (req, res) => {
-  res.sendFile(app.get('dirname') + '/Views/' + req.params.name + '.jpeg')
+  res.sendFile(app.get('dirname') + '/Uploads/' + req.params.name + '.jpeg')
 })
 
 app.use('/Users', Users);
