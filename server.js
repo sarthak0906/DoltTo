@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/Img/:name', (req, res) => {
-  res.sendFile(app.get('dirname') + '/Uploads/' + req.params.name + '.jpeg')
+  res.sendFile(app.get('dirname') + '/Uploads/' + req.params.name + '.png')
 })
 
 app.use('/Users', Users);
